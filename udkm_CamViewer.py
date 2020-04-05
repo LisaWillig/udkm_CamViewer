@@ -39,7 +39,7 @@ class MyWindow(PyQt5.QtWidgets.QMainWindow):
     def __init__(self, parent=None):
 
         super(MyWindow, self).__init__(parent)
-        self.ui = uic.loadUi('\\GUI\\udkm_CamViewer.ui', self)
+        self.ui = uic.loadUi('GUI\\udkm_CamViewer.ui', self)
 
         self.ui.setWindowTitle("udkm_CamViewer")
         self.init_ui()
@@ -514,7 +514,7 @@ class MyWindow(PyQt5.QtWidgets.QMainWindow):
             self.fwhmXList.append(fwhmX)
             fwhmY = round(imageCalculations["FWHM_Y"] * float(self.size[1]), 1)
             self.fwhmYList.append(fwhmY)
-            if self.check_average.isChecked():
+            if self.check_average.isChecked() and self.line_nbAverages.text()!= '':
                 if len(self.fwhmXList) < int(self.line_nbAverages.text()):
                     fwhmX = sum(self.fwhmXList[:]) / len(self.fwhmXList)
                     fwhmY = sum(self.fwhmYList[:]) / len(self.fwhmYList)

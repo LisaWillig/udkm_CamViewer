@@ -1183,7 +1183,7 @@ QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
         </font>
        </property>
        <property name="text">
-        <string>Beamprofiler </string>
+        <string>CamViewer</string>
        </property>
       </widget>
       <widget class="QLabel" name="label_Right_40">
