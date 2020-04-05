@@ -1,6 +1,4 @@
-import numpy as np
 import pyqtgraph as pg
-import pyqtgraph.ptime as ptime
 import sys
 import os
 from datetime import datetime
@@ -8,7 +6,6 @@ from PyQt5 import uic
 import PyQt5
 from PyQt5.QtWidgets import QMainWindow, QApplication, QMessageBox
 from pyqtgraph.Qt import QtGui, QtCore
-from matplotlib import cm
 from scipy.optimize import curve_fit
 from pypylon import genicam
 import config
@@ -296,11 +293,6 @@ class MyWindow(PyQt5.QtWidgets.QMainWindow):
 
         self.yMin = imageCalculations["Center_GaussFitY"] - len(imageCalculations["SumY"])/3
         self.yMax = imageCalculations["Center_GaussFitY"] + len(imageCalculations["SumY"])/3
-
-        if self.btn_Zoom.isChecked():
-            self.bZoom = True
-        else:
-            self.bZoom = False
 
     def setAverage(self):
         if self.line_average.text() == '':
