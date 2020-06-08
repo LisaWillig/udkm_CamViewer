@@ -53,16 +53,15 @@ class BaslerCam:
         j = 0
         self.stopAcquisition()
         for i in self.camList:
-
             cam = self.cameras[i]
-            if cam.PixelFormat != pixelFormat:
-                cam.PixelFormat = pixelFormat
+
             if type(exposureTime) == dict:
                 exposure = exposureTime[j]
             else:
                 exposure = exposureTime
+            if cam.PixelFormat != pixelFormat:
+                cam.PixelFormat = pixelFormat
 
-            cam.ExposureTimeRaw = int(exposure*1000)
             cam.MaxNumBuffer = 2
             try:
                 cam.Gain = cam.Gain.Min
@@ -183,7 +182,7 @@ class BaslerCam:
     def setIntegrationTime(self, exposureTime):
         self.stopAcquisition()
         for i in self.camList:
-            cam=self.cameras[i]
+            cam = self.cameras[i]
             cam.ExposureTimeRaw = int(exposureTime*1000)
         self.startAcquisition()
 
@@ -212,6 +211,7 @@ class BaslerCam:
             cam = self.cameras[i]
             cam.StopGrabbing()
             cam.Close()
+            self.camList.remove(i)
 
     def returnCamList(self):
         camList = []

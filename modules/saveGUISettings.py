@@ -26,6 +26,8 @@ class GUISettings:
           # if type(obj) is QComboBox:  # this works similar to isinstance, but missed some field... not sure why?
           if isinstance(obj, PyQt5.QtWidgets.QComboBox):
               name = obj.objectName()  # get combobox name
+              if name == "combo_Cam":
+                  continue
               index = obj.currentIndex()  # get current index from combobox
               text = obj.itemText(index)  # get the text for current index
               settings.setValue(name, text)  # save combobox selection to registry
@@ -84,7 +86,8 @@ class GUISettings:
                 index = obj.currentIndex()  # get current region from combobox
                 # text   = obj.itemText(index)   # get the text for new selected index
                 name = obj.objectName()
-
+                if name == "combo_Cam":
+                    continue
                 value = (settings.value(name))
 
                 if value == "":
@@ -108,25 +111,37 @@ class GUISettings:
                 name = obj.objectName()
                 value = settings.value(name)  # get stored value from registry
                 if value != None:
-                    obj.setChecked(strtobool(value))  # restore checkbox
+                    try:
+                        obj.setChecked(strtobool(value))
+                    except AttributeError:
+                        obj.setChecked(value)
 
             if isinstance(obj, PyQt5.QtWidgets.QGroupBox):
                 name = obj.objectName()
                 value = settings.value(name)  # get stored value from registry
                 if value != None:
-                    obj.setChecked(strtobool(value))  # restore checkbox
+                    try:
+                        obj.setChecked(strtobool(value))
+                    except AttributeError:
+                        obj.setChecked(value)
 
             if isinstance(obj, PyQt5.QtWidgets.QRadioButton):
                 name = obj.objectName()
                 value = settings.value(name)  # get stored value from registry
                 if value != None:
-                    obj.setChecked(strtobool(value))
+                    try:
+                        obj.setChecked(strtobool(value))
+                    except AttributeError:
+                        obj.setChecked(value)
 
             if isinstance(obj, PyQt5.QtWidgets.QToolButton):
                 name = obj.objectName()
                 value = settings.value(name)  # get stored value from registry
                 if value != None:
-                    obj.setChecked(strtobool(value))
+                    try:
+                        obj.setChecked(strtobool(value))
+                    except AttributeError:
+                        obj.setChecked(value)
 
             if isinstance(obj, PyQt5.QtWidgets.QSlider):
                 name = obj.objectName()
@@ -140,14 +155,19 @@ class GUISettings:
                 if value != None:
                     obj. setValue(int(value))   # restore value from registry
 
-            try:
-                imageTurn = int(settings.value('imageTurn'))
-                ImageInvert = settings.value('ImageInvert')
-                ImageInvert = [int(x) for x in ImageInvert]
-                return imageTurn, ImageInvert
-            except TypeError:
-                pass
         settings.endGroup()
+
+    def imageSettings(self, ui, settings, camera = None):
+        if camera != None:
+            settings.beginGroup(str(camera))
+
+        try:
+            imageTurn = int(settings.value('imageTurn'))
+            ImageInvert = settings.value('ImageInvert')
+            ImageInvert = [int(x) for x in ImageInvert]
+            return imageTurn, ImageInvert
+        except TypeError:
+            pass
 
     def saveLines(self, path, x, y):
 

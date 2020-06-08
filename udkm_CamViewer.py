@@ -49,7 +49,7 @@ class MyWindow(PyQt5.QtWidgets.QMainWindow):
         self.init = 1
         self.bFitX = False
         self.bFitY = False
-        self.IntTime = None
+        self.IntTime = 0.035
         self.bAutoExp = False
         self.Gain = 0
         # rotation angle, possible values either 0, 90, 180, 270 Degree
@@ -58,6 +58,8 @@ class MyWindow(PyQt5.QtWidgets.QMainWindow):
         # list means [x, y]
         self.imgInvert = [1, 1]
         self.turnCount = 4
+        self.intTimeDivider = 1
+        self.previousCam = None
 
         self.FList = []
         self.fwhmXList = []
@@ -68,7 +70,8 @@ class MyWindow(PyQt5.QtWidgets.QMainWindow):
         self.populateColormaps()
 
         self.Setting = GUISettings()
-        self.Setting.guirestore(self.ui, QtCore.QSettings('./GUI/saved.ini', QtCore.QSettings.IniFormat))
+
+
         #try:
         #    self.markerListX, self.markerListY = self.Setting.readLines('./GUI/savedLines.txt')
         #except FileNotFoundError:
@@ -144,9 +147,18 @@ class MyWindow(PyQt5.QtWidgets.QMainWindow):
             self.combo_colourmap.addItem(colormaps[i])
 
     def setIntTime(self):
-        self.IntTime = float(self.line_expTime.text())
+        self.calculateIntTime()
+        self.line_expTime.setText(str(np.round(self.IntTime, 3)))
+        self.slide_expTime.setValue(self.calcNewSlider())
         if not self.bAutoExp:
             self.cam.setIntegrationTime(self.IntTime)
+
+    def calculateIntTime(self):
+        correctIntTime = float(self.line_expTime.text()) % self.intTimeDivider
+        if correctIntTime < self.intTimeDivider / 2:
+            self.IntTime = float(self.line_expTime.text()) - correctIntTime
+        else:
+            self.IntTime = float(self.line_expTime.text()) + self.intTimeDivider - correctIntTime
 
     def setGain(self):
         try:
@@ -302,13 +314,17 @@ class MyWindow(PyQt5.QtWidgets.QMainWindow):
     def initIntegrationTime(self):
 
         intLimits = self.getIntLimits()
+        self.intTimeDivider = intLimits[0]
         self.slide_expTime.setMinimum(intLimits[0]*1000)
         self.slide_expTime.setMaximum(intLimits[1]*1000)
 
-        self.turnCount, self.imgInvert = \
-            self.Setting.guirestore(self.ui,
-                                    QtCore.QSettings('./GUI/saved.ini', QtCore.QSettings.IniFormat),
-                                    str(self.getCurrentCam()[0]))
+        try:
+            self.turnCount, self.imgInvert = \
+                self.Setting.imageSettings(self.ui,
+                                        QtCore.QSettings('./GUI/saved.ini', QtCore.QSettings.IniFormat),
+                                        str(self.getCurrentCam()[0]))
+        except TypeError:
+            pass
 
         try:
             self.IntTime = float(self.line_expTime.text())
@@ -365,7 +381,7 @@ class MyWindow(PyQt5.QtWidgets.QMainWindow):
 
     def changeIntText(self):
         self.line_expTime.setText(str(np.round(self.slide_expTime.value()*10**(-3), 3)))
-        self.setIntTime()
+        #self.setIntTime()
 
     def getIntLimits(self):
          return self.cam.getIntLimits()
@@ -427,13 +443,34 @@ class MyWindow(PyQt5.QtWidgets.QMainWindow):
 
     def initCam(self):
 
+        if self.bcamera:
+
+
+            self.Setting.guisave(self.ui,
+                                 QtCore.QSettings('./GUI/saved.ini', QtCore.QSettings.IniFormat),
+                                 str(self.previousCam), self.turnCount, self.imgInvert)
+            self.cam.close()
+            self.resetImage()
+
         self.cam.openCommunications(self.getCurrentCam())
+        self.Setting.guirestore(self.ui, QtCore.QSettings('./GUI/saved.ini', QtCore.QSettings.IniFormat), self.getCurrentCam()[0])
+        self.initEmptyValues()
         self.initIntegrationTime()
         self.initGain()
         if not self.bAutoExp:
+            self.calculateIntTime()
             self.cam.setCameraParameters(self.IntTime, pixelFormat)
         self.size = self.cam.getPixelSize(self.getCurrentCam())
         self.bcamera = 1
+        self.previousCam = self.getCurrentCam()[0]
+
+    def initEmptyValues(self):
+        if self.line_average.text() == '':
+            self.line_average.setText('1')
+        if self.line_expTime.text() == '':
+            self.line_average.line_expTime('1')
+        if self.combo_gain.currentText() == '':
+            self.combo_gain.setCurrentIndex(0)
 
     def update(self):
 
@@ -450,7 +487,10 @@ class MyWindow(PyQt5.QtWidgets.QMainWindow):
                     return
                 if len(image) == 1:
                     image = image[0]
-                image = np.rot90(image, k=self.turnCount%4)
+                try:
+                    image = np.rot90(image, k=self.turnCount%4)
+                except ValueError:
+                    continue
                 image = image[::self.imgInvert[0], ::self.imgInvert[1]]
                 if self.currentAvg == 0:
                     imageCalculations["Image"] = image
@@ -465,6 +505,8 @@ class MyWindow(PyQt5.QtWidgets.QMainWindow):
             except genicam._genicam.LogicalErrorException:
                 self.cam.close()
                 self.initCam()
+            except IndexError:
+                continue
 
     def analyse(self):
         self.updateImgCalc()
@@ -533,7 +575,6 @@ class MyWindow(PyQt5.QtWidgets.QMainWindow):
                                      QMessageBox.No)
         if reply == QMessageBox.Yes:
             self.timer.stop()
-            print(str(self.getCurrentCam()[0]))
             #self.Setting.saveLines('./GUI/savedLines.txt', self.markerListX, self.markerListY)
             self.Setting.guisave(self.ui,
                                  QtCore.QSettings('./GUI/saved.ini', QtCore.QSettings.IniFormat),
